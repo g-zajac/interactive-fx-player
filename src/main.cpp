@@ -22,14 +22,17 @@ Bounce debouncer = Bounce();
 #include <SerialFlash.h>
 
 // GUItool: begin automatically generated code
-AudioPlaySdWav           playWav1;       //xy=533,331
-AudioAmplifier           amp1;           //xy=702,298
-AudioAmplifier           amp2;           //xy=702,372
-AudioOutputAnalogStereo  dacs1;          //xy=846,331
-AudioConnection          patchCord1(playWav1, 0, amp1, 0);
-AudioConnection          patchCord2(playWav1, 1, amp2, 0);
-AudioConnection          patchCord3(amp1, 0, dacs1, 0);
-AudioConnection          patchCord4(amp2, 0, dacs1, 1);
+AudioPlaySdWav           playSdWav2;     //xy=357,253
+AudioPlaySdWav           playSdWav1;     //xy=359,208
+AudioMixer4              mixer2;         //xy=587,275
+AudioMixer4              mixer1;         //xy=591,197
+AudioOutputAnalogStereo  dacs1;          //xy=777,239
+AudioConnection          patchCord1(playSdWav2, 0, mixer1, 1);
+AudioConnection          patchCord2(playSdWav2, 1, mixer2, 1);
+AudioConnection          patchCord3(playSdWav1, 0, mixer1, 0);
+AudioConnection          patchCord4(playSdWav1, 1, mixer2, 0);
+AudioConnection          patchCord5(mixer2, 0, dacs1, 1);
+AudioConnection          patchCord6(mixer1, 0, dacs1, 0);
 // GUItool: end automatically generated code
 
 // Use these with the Teensy Audio Shield
@@ -164,8 +167,11 @@ void setup() {
   // detailed information, see the MemoryAndCpuUsage example
   AudioMemory(8);
 
-  amp1.gain(0.1);
-  amp2.gain(0.1);
+  mixer1.gain(0, 0.1);
+  mixer2.gain(0, 0.1);
+
+  mixer1.gain(1, 0.1);
+  mixer2.gain(1, 0.1);
 
   // Comment these out if not using the audio adaptor board.
   // This may wait forever if the SDA & SCL pins lack
@@ -189,13 +195,13 @@ void playFile(const char *filename)
 
   // Start playing the file.  This sketch continues to
   // run while the file plays.
-  playWav1.play(filename);
+  playSdWav1.play(filename);
 
   // A brief delay for the library read WAV info
   delay(5);
 
   // Simply wait for the file to finish playing.
-  while (playWav1.isPlaying()) {
+  while (playSdWav1.isPlaying()) {
     // uncomment these lines if you audio shield
     // has the optional volume pot soldered
     //float vol = analogRead(15);
@@ -210,17 +216,8 @@ void loop() {
 
   if (debouncer.rose() ) {  // Call code if button transitions from HIGH to LOW
     Serial.println("EDGE RISE DETECTED!");
+    playFile("1.WAV");
   }
-
-
-  // unsigned long currentMillis = millis();
-  // if (currentMillis - previousMillis >= interval) {
-  //   // save the last time you blinked the LED
-  //   previousMillis = currentMillis;
-  //
-  //   measureTemperature();
-  //   digitalClockDisplay();
-  // }
 
   if (runEvery(3000)){
       measureTemperature();
