@@ -5,6 +5,14 @@
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
 
+unsigned long previousMillis = 0;
+const long interval = 3000;
+
+#include <Encoder.h>
+Encoder myEnc(5, 6);
+long oldPosition  = -999;
+
+
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -37,6 +45,40 @@ AudioConnection          patchCord4(amp2, 0, dacs1, 1);
 //#define SDCARD_MOSI_PIN  11
 //#define SDCARD_SCK_PIN   13
 
+void measureTemperature(){
+  // Reading temperature or humidity takes about 250 milliseconds!
+  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
+  float h = dht.readHumidity();
+  // Read temperature as Celsius (the default)
+  float t = dht.readTemperature();
+  // Read temperature as Fahrenheit (isFahrenheit = true)
+  float f = dht.readTemperature(true);
+
+  // Check if any reads failed and exit early (to try again).
+  if (isnan(h) || isnan(t) || isnan(f)) {
+    Serial.println(F("Failed to read from DHT sensor!"));
+    return;
+  }
+
+  // Compute heat index in Fahrenheit (the default)
+  float hif = dht.computeHeatIndex(f, h);
+  // Compute heat index in Celsius (isFahreheit = false)
+  float hic = dht.computeHeatIndex(t, h, false);
+
+  Serial.print(F("Humidity: "));
+  Serial.print(h);
+  Serial.print(F("%  Temperature: "));
+  Serial.print(t);
+  Serial.print(F("°C "));
+  Serial.print(f);
+  Serial.print(F("°F  Heat index: "));
+  Serial.print(hic);
+  Serial.print(F("°C "));
+  Serial.print(hif);
+  Serial.println(F("°F"));
+}
+
+
 void setup() {
   Serial.begin(9600);
 
@@ -46,7 +88,6 @@ void setup() {
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
   AudioMemory(8);
-
 
   amp1.gain(0.1);
   amp2.gain(0.1);
@@ -90,38 +131,24 @@ void playFile(const char *filename)
 
 
 void loop() {
-  playFile("1.WAV");  // filenames are always uppercase 8.3 format
-  delay(1500);
+  // check Encoder
+  // NOTE use volue pot for pernament regulation
+  long newPosition = myEnc.read();
+  if (newPosition != oldPosition) {
+    oldPosition = newPosition;
+    Serial.println(newPosition);
+  }
 
-  // Reading temperature or humidity takes about 250 milliseconds!
-// Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-float h = dht.readHumidity();
-// Read temperature as Celsius (the default)
-float t = dht.readTemperature();
-// Read temperature as Fahrenheit (isFahrenheit = true)
-float f = dht.readTemperature(true);
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval) {
+    // save the last time you blinked the LED
+    previousMillis = currentMillis;
 
-// Check if any reads failed and exit early (to try again).
-if (isnan(h) || isnan(t) || isnan(f)) {
-  Serial.println(F("Failed to read from DHT sensor!"));
-  return;
-}
+    measureTemperature();
+  }
 
-// Compute heat index in Fahrenheit (the default)
-float hif = dht.computeHeatIndex(f, h);
-// Compute heat index in Celsius (isFahreheit = false)
-float hic = dht.computeHeatIndex(t, h, false);
+  // playFile("1.WAV");  // filenames are always uppercase 8.3 format
+  // delay(1500);
 
-Serial.print(F("Humidity: "));
-Serial.print(h);
-Serial.print(F("%  Temperature: "));
-Serial.print(t);
-Serial.print(F("°C "));
-Serial.print(f);
-Serial.print(F("°F  Heat index: "));
-Serial.print(hic);
-Serial.print(F("°C "));
-Serial.print(hif);
-Serial.println(F("°F"));
 
 }
