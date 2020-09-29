@@ -124,6 +124,18 @@ unsigned long processSyncMessage() {
   return pctime;
 }
 
+boolean runEvery(unsigned long interval)
+{
+  static unsigned long previousMillis = 0;
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval)
+  {
+    previousMillis = currentMillis;
+    return true;
+  }
+  return false;
+}
+
 void setup() {
   // set the Time library to use Teensy 3.0's RTC to keep time
   setSyncProvider(getTeensy3Time);
@@ -201,13 +213,18 @@ void loop() {
   }
 
 
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= interval) {
-    // save the last time you blinked the LED
-    previousMillis = currentMillis;
+  // unsigned long currentMillis = millis();
+  // if (currentMillis - previousMillis >= interval) {
+  //   // save the last time you blinked the LED
+  //   previousMillis = currentMillis;
+  //
+  //   measureTemperature();
+  //   digitalClockDisplay();
+  // }
 
-    measureTemperature();
-    digitalClockDisplay();
+  if (runEvery(3000)){
+      measureTemperature();
+      digitalClockDisplay();
   }
 
   // playFile("1.WAV");  // filenames are always uppercase 8.3 format
