@@ -8,10 +8,6 @@ DHT dht(DHTPIN, DHTTYPE);
 unsigned long previousMillis = 0;
 const long interval = 3000;
 
-#include <Encoder.h>
-Encoder myEnc(5, 6);
-long oldPosition  = -999;
-
 
 #include <Audio.h>
 #include <Wire.h>
@@ -131,13 +127,6 @@ void playFile(const char *filename)
 
 
 void loop() {
-  // check Encoder
-  // NOTE use volue pot for pernament regulation
-  long newPosition = myEnc.read();
-  if (newPosition != oldPosition) {
-    oldPosition = newPosition;
-    Serial.println(newPosition);
-  }
 
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
