@@ -8,6 +8,9 @@ DHT dht(DHTPIN, DHTTYPE);
 unsigned long previousMillis = 0;
 const long interval = 3000;
 
+#include <Bounce2.h>
+#define PIR_PIN 6
+Bounce debouncer = Bounce();
 
 #include <Audio.h>
 #include <Wire.h>
@@ -74,12 +77,15 @@ void measureTemperature(){
   Serial.println(F("°F"));
 }
 
-
 void setup() {
   Serial.begin(9600);
 
   Serial.println(F("DHTxx test!"));
   dht.begin();
+
+  debouncer.attach(PIR_PIN,INPUT_PULLUP); // Attach the debouncer to a pin with INPUT_PULLUP mode
+  debouncer.interval(25); // Use a debounce interval of 25 milliseconds
+
 
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
@@ -127,6 +133,12 @@ void playFile(const char *filename)
 
 
 void loop() {
+  debouncer.update(); // Update the Bounce instance
+
+  if (debouncer.rose() ) {  // Call code if button transitions from HIGH to LOW
+    Serial.println("EDGE RISE DETECTED!");
+  }
+
 
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= interval) {
