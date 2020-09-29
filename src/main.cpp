@@ -12,6 +12,9 @@ const long interval = 3000;
 #define PIR_PIN 6
 Bounce debouncer = Bounce();
 
+#include <TimeLib.h>
+
+
 #include <Audio.h>
 #include <Wire.h>
 #include <SPI.h>
@@ -77,15 +80,73 @@ void measureTemperature(){
   Serial.println(F("°F"));
 }
 
-void setup() {
-  Serial.begin(9600);
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}
 
-  Serial.println(F("DHTxx test!"));
+void digitalClockDisplay() {
+  // digital clock display of the time
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" ");
+  Serial.print(day());
+  Serial.print(" ");
+  Serial.print(month());
+  Serial.print(" ");
+  Serial.print(year());
+  Serial.println();
+}
+
+time_t getTeensy3Time()
+{
+  return Teensy3Clock.get();
+}
+
+/*  code to process time sync messages from the serial port   */
+#define TIME_HEADER  "T"   // Header tag for serial time sync message
+
+unsigned long processSyncMessage() {
+  unsigned long pctime = 0L;
+  const unsigned long DEFAULT_TIME = 1357041600; // Jan 1 2013
+
+  if(Serial.find(TIME_HEADER)) {
+     pctime = Serial.parseInt();
+     return pctime;
+     if( pctime < DEFAULT_TIME) { // check the value is a valid time (greater than Jan 1 2013)
+       pctime = 0L; // return 0 to indicate that the time is not valid
+     }
+  }
+  return pctime;
+}
+
+void setup() {
+  // set the Time library to use Teensy 3.0's RTC to keep time
+  setSyncProvider(getTeensy3Time);
+
+  Serial.begin(9600);
+  while (!Serial);  // Wait for Arduino Serial Monitor to open
+  delay(100);
+
+  // setTime(22,50,55,29,9,2020);
+  // Teensy3Clock.set(now());
+
+  if (timeStatus()!= timeSet) {
+    Serial.println("Unable to sync with the RTC");
+    // RTC.adjust(DateTime(__DATE__, __TIME__));
+  } else {
+    Serial.println("RTC has set the system time");
+  }
+
   dht.begin();
+  Serial.println(F("DHT22 set!"));
 
   debouncer.attach(PIR_PIN,INPUT_PULLUP); // Attach the debouncer to a pin with INPUT_PULLUP mode
   debouncer.interval(25); // Use a debounce interval of 25 milliseconds
-
 
   // Audio connections require memory to work.  For more
   // detailed information, see the MemoryAndCpuUsage example
@@ -146,6 +207,7 @@ void loop() {
     previousMillis = currentMillis;
 
     measureTemperature();
+    digitalClockDisplay();
   }
 
   // playFile("1.WAV");  // filenames are always uppercase 8.3 format
