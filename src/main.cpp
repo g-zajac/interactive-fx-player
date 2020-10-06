@@ -14,6 +14,17 @@ Bounce debouncer = Bounce();
 
 #include <TimeLib.h>
 
+#include <TinyGPS++.h>
+#include <SoftwareSerial.h>
+
+static const int RXPin = 9, TXPin = 10;
+static const uint32_t GPSBaud = 9600;
+
+// The TinyGPS++ object
+TinyGPSPlus gps;
+
+// The serial connection to the GPS device
+SoftwareSerial ss(RXPin, TXPin);
 
 #include <Audio.h>
 #include <Wire.h>
@@ -143,6 +154,8 @@ void setup() {
   // set the Time library to use Teensy 3.0's RTC to keep time
   setSyncProvider(getTeensy3Time);
 
+  ss.begin(GPSBaud);
+
   Serial.begin(9600);
   while (!Serial);  // Wait for Arduino Serial Monitor to open
   delay(100);
@@ -212,20 +225,31 @@ void playFile(const char *filename)
 
 
 void loop() {
-  debouncer.update(); // Update the Bounce instance
-
-  if (debouncer.rose() ) {  // Call code if button transitions from HIGH to LOW
-    Serial.println("EDGE RISE DETECTED!");
-    playFile("1.WAV");
-  }
-
-  if (runEvery(3000)){
-      measureTemperature();
-      digitalClockDisplay();
-  }
+  // debouncer.update(); // Update the Bounce instance
+  //
+  // if (debouncer.rose() ) {  // Call code if button transitions from HIGH to LOW
+  //   Serial.println("EDGE RISE DETECTED!");
+  //   playFile("1.WAV");
+  // }
+  //
+  // if (runEvery(3000)){
+  //     measureTemperature();
+  //     digitalClockDisplay();
+  // }
 
   // playFile("1.WAV");  // filenames are always uppercase 8.3 format
   // delay(1500);
 
+  Serial.println(gps.satellites.value());
+
+  while (ss.available() > 0){
+      gps.encode(ss.read());
+      if (gps.location.isUpdated()){
+        Serial.print("Latitude= ");
+        Serial.print(gps.location.lat(), 6);
+        Serial.print(" Longitude= ");
+        Serial.println(gps.location.lng(), 6);
+      }
+    }
 
 }
